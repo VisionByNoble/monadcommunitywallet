@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monad Wallet Landing Page</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js" defer></script>
+    
+    <style>
+        /* General Reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Background Styling */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #2b2670; /* Tint 1 */
+            color: white;
+            text-align: center;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Background Animation */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.3;
+            z-index: -1;
+        }
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            color: rgba(131, 110, 249, 0.9);
+        }
+        h3 {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+            color: rgba(131, 110, 249, 0.9);
+        }
+
+        /* Paragraph Styling */
+        p {
+            font-size: 1.2em;
+            margin-bottom: 20px;
+            color: rgba(131, 110, 249, 0.9);
+        }
+
+        /* Main UI Container */
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: rgba(131, 110, 249, 0.9); /* Primary Shade */
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+            background-image: url('./monadgifs/monad-logo-animated.gif');
+            background-size: cover;
+            background-position: center;
+        }
+
+        /* Button Styling */
+        button {
+            background: #9c8cfa; /* Tint 2 */
+            border: none;
+            padding: 12px 20px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+            border-radius: 8px;
+            font-weight: bold;
+            transition: all 0.3s ease-in-out;
+        }
+
+        button:hover {
+            background: #b5a8fa; /* Tint 3 */
+            transform: scale(1.05);
+        }
+
+        /* Input Fields */
+        input {
+            padding: 12px;
+            margin: 10px;
+            width: 100%;
+            border: none;
+            border-radius: 5px;
+            outline: none;
+            background: #ccc4fc; /* Background Tint */
+            color: black;
+            font-size: 16px;
+        }
+
+        /* GIF Container */
+        .gif-container {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            gap: 10px; /* Adds space between GIFs */
+        }
+
+        .gif-container img {
+            width: 20%; /* Fixed width for all GIFs */
+            height: 5%; /* Fixed height for all GIFs */
+            border-radius: 10px;
+            opacity: 0.7;
+            transition: opacity 0.3s ease-in-out;
+            object-fit: cover; /* Ensures the GIFs maintain aspect ratio */
+        }
+
+        .gif-container img:hover {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Monad Community Wallet</h1>
+        <p>Check wallet balance, add members, and send funds.</p>
+        
+        <button onclick="connectWallet()">Connect Wallet</button>
+        <p id="walletAddress">Wallet: Not Connected</p>
+
+        <button onclick="getBalance()">Check Balance</button>
+        <p id="balance">Balance: 0 ETH</p>
+
+        <h3>Send Funds</h3>
+        <input type="text" id="recipient" placeholder="Recipient Address">
+        <input type="text" id="amount" placeholder="Amount in ETH">
+        <button onclick="sendFunds()">Send</button>
+    </div><br><br><br>
+
+    <!-- GIF Container -->
+    <div class="gif-container">
+        <img src="./monadgifs/walk.gif" alt="GIF 1">
+        <img src="./monadgifs/1moon.gif" alt="GIF 2">
+        <img src="./monadgifs/monad-logo-animated.gif" alt="GIF 3">
+        <img src="./monadgifs/5.gif" alt="GIF 4">
+        <img src="./monadgifs/48-unscreen.gif" alt="GIF 5">
+    </div>
+
+    <script>
+let provider;
+let signer;
+let contract;
+let userAddress;
+
+// Replace with your contract's ABI and address
+const contractAddress = "0x258382DcCE4CDC8Ca407f6386554bF9c14c3AC8c"; // Replace with the address from Foundry deployment
+const contractABI = [
+    // Paste your contract's ABI here
+    {
+        "inputs": [],
+        "stateMutability": "nonpayable",
+        "type": "constructor"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "_member",
+                "type": "address"
+            }
+        ],
+        "name": "addMember",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "getBalance",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "name": "members",
+        "outputs": [
+            {
+                "internalType": "bool",
+                "name": "",
+                "type": "bool"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "owner",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "_member",
+                "type": "address"
+            }
+        ],
+        "name": "removeMember",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address payable",
+                "name": "_to",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "_amount",
+                "type": "uint256"
+            }
+        ],
+        "name": "sendMoney",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "newOwner",
+                "type": "address"
+            }
+        ],
+        "name": "transferOwnership",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "stateMutability": "payable",
+        "type": "receive"
+    }
+];
+
+// Connect Wallet
+async function connectWallet() {
+    if (window.ethereum) {
+        provider = new ethers.providers.Web3Provider(window.ethereum);
+        
+        // Request account access
+        await provider.send("eth_requestAccounts", []);
+        signer = provider.getSigner();
+        userAddress = await signer.getAddress();
+        document.getElementById("walletAddress").innerText = `Wallet: ${userAddress}`;
+
+        // Check if the user is connected to the correct network
+        const network = await provider.getNetwork();
+        console.log("Connected to network:", network);
+        
+        // Example: check for local network (chainId: 31337)
+        console.log("Current chain ID:", network.chainId);
+        if (network.chainId !== 31337) { // For local testnet (Anvil, Ganache)
+            alert("Please connect to the correct network!");
+            return;
+        }
+
+        // Initialize contract
+        contract = new ethers.Contract(contractAddress, contractABI, signer);
+        console.log("Contract initialized:", contract);
+        alert("Wallet connected!");
+    } else {
+        alert("Please install MetaMask!");
+    }
+}
+
+// Check Balance
+async function getBalance() {
+    if (!provider || !userAddress) {
+        alert("Please connect your wallet first!");
+        return;
+    }
+    try {
+        const balance = await provider.getBalance(userAddress);
+        const formattedBalance = ethers.utils.formatEther(balance);
+        document.getElementById("balance").innerText = `Balance: ${formattedBalance} ETH`;
+        console.log(`Balance: ${formattedBalance} ETH`);
+    } catch (error) {
+        console.error("Error fetching balance:", error);
+        alert("Failed to fetch balance. Check the console for details.");
+    }
+}
+
+// Send Funds
+async function sendFunds() {
+    if (!signer) {
+        alert("Please connect your wallet first!");
+        return;
+    }
+    const recipient = document.getElementById("recipient").value;
+    const amount = document.getElementById("amount").value;
+
+    if (!recipient || !amount) {
+        alert("Please fill in all fields!");
+        return;
+    }
+
+    try {
+        const tx = await signer.sendTransaction({
+            to: recipient,
+            value: ethers.utils.parseEther(amount),
+        });
+        await tx.wait(); // Wait for the transaction to be mined
+        alert("Funds sent successfully!");
+    } catch (error) {
+        console.error("Error sending funds:", error);
+        alert("Failed to send funds. Check the console for details.");
+    }
+}
+    </script>
+
+</body>
+</html>

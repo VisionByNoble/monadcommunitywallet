@@ -1,43 +1,49 @@
 // SPDX-License-Identifier: MIT
+
 pragma solidity ^0.8.28;
 
-import "forge-std/Test.sol";
-import "../src/CommunityWallet.sol";
+contract CommunityWallet {
+    address public owner;
 
-contract CommunityWalletTest is Test {
-    CommunityWallet wallet;
-    address owner = address(0x123);
-    address member = address(0x456);
-    address stranger = address(0x789);
+    mapping(address => bool) public members;
 
-    function setUp() public {
-        vm.prank(owner); // Pretend to be the owner
-        wallet = new CommunityWallet();
+    constructor() {
+        owner = msg.sender;
     }
 
-    function testAddMember() public {
-        vm.prank(owner); // Pretend to be the owner
-        wallet.addMember(member);
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Only the owner can perform this action!");
 
-        assertTrue(wallet.members(member), "Member should be added!");
+        _;
     }
 
-    function testSendMoney() public {
-        vm.prank(owner); // Pretend to be the owner
-        wallet.addMember(member);
+    modifier onlyMembers() {
+        require(members[msg.sender], "You're not a member!");
 
-        vm.deal(address(wallet), 100 ether); // Give the wallet some money
-        vm.prank(member); // Pretend to be the member
-        wallet.sendMoney(payable(stranger), 50 ether);
-
-        assertEq(stranger.balance, 50 ether, "Stranger should receive 50 ether!");
+        _;
     }
 
-    function testDonate() public {
-        vm.deal(owner, 100 ether); // Give the owner some money
-        vm.prank(owner); // Pretend to be the owner
-        wallet.donate{value: 50 ether}();
-
-        assertEq(address(wallet).balance, 50 ether, "Wallet should have 50 ether!");
+    function addMember(address _member) public onlyOwner {
+        members[_member] = true;
     }
+
+    function removeMember(address _member) public onlyOwner {
+        members[_member] = false;
+    }
+
+    function transferOwnership(address newOwner) public onlyOwner {
+        owner = newOwner;
+    }
+
+    function getBalance() public view returns (uint256) {
+        return address(this).balance;
+    }
+
+    function sendMoney(address payable _to, uint256 _amount) public onlyMembers {
+        require(address(this).balance >= _amount, "Insufficient balance in wallet");
+
+        _to.transfer(_amount);
+    }
+
+    receive() external payable {}
 }

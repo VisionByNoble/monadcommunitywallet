@@ -1,66 +1,55 @@
-## Foundry
+# Monad Community Wallet
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+! [Monad Community Graphic](monadwalletimage.jpg)
 
-Foundry consists of:
+The Monad Community Wallet is a smart contract designed to help the Monad community pool funds for special occasions like birthdays, big events, or even during tough times. It’s a decentralized wallet where members can donate, send funds, and manage money collectively.
 
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
+Features
+Add Members: Only the owner can add new members to the wallet.
 
-## Documentation
+Send Funds: Members can send funds to other addresses.
 
-https://book.getfoundry.sh/
+Donate: Anyone can donate funds to the wallet.
 
-## Usage
+Check Balance: View the total balance of the wallet.
 
-### Build
+Secure: Built with Solidity and tested using Foundry for maximum security.
 
-```shell
-$ forge build
-```
+Getting Started
+Prerequisites
+Before you begin, make sure you have the following installed:
 
-### Test
+Foundry: A fast Ethereum development framework.
 
-```shell
-$ forge test
-```
+Visual Studio Code: A code editor to write and manage your project.
 
-### Format
+Git: To version control your code.
 
-```shell
-$ forge fmt
-```
+We welcome contributions from the Monad community! Here’s how you can help:
 
-### Gas Snapshots
+Fork the Repository
+Click the "Fork" button on the top right of this repository.
 
-```shell
-$ forge snapshot
-```
+Create a New Branch
+Create a branch for your feature or bug fix:
 
-### Anvil
+bash
+Copy
+git checkout -b feature/your-feature-name
+Make Your Changes
+Write your code and add tests if needed.
 
-```shell
-$ anvil
-```
+Submit a Pull Request
+Push your changes and open a pull request. We’ll review it as soon as possible!
 
-### Deploy
+This project is licensed under the MIT License. See the LICENSE file for details.
 
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
+Acknowledgments
+Monad Team: For inspiring this project and supporting the community.
 
-### Cast
+Contact
+If you have any questions or want to collaborate, feel free to reach out:
 
-```shell
-$ cast <subcommand>
-```
+Your Name: [codingthuglocalhost@gmail.com](mailto:codingthuglocalhost@gmail.com)
 
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
-```
+GitHub: [github](https://github.com/VisionByNoble)

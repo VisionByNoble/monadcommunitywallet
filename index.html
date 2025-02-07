@@ -136,6 +136,8 @@
         <input type="text" id="recipient" placeholder="Recipient Address">
         <input type="text" id="amount" placeholder="Amount in ETH">
         <button onclick="sendFunds()">Send</button>
+        <button onclick="switchToGoerli()">Switch to Goerli</button>
+        <button onclick="addMember()">Add Member</button>
     </div><br><br><br>
 
     <!-- GIF Container -->
@@ -273,29 +275,80 @@ const contractABI = [
 // Connect Wallet
 async function connectWallet() {
     if (window.ethereum) {
-        provider = new ethers.providers.Web3Provider(window.ethereum);
-        
-        // Request account access
-        await provider.send("eth_requestAccounts", []);
-        signer = provider.getSigner();
-        userAddress = await signer.getAddress();
-        document.getElementById("walletAddress").innerText = `Wallet: ${userAddress}`;
+        try {
+            provider = new ethers.providers.Web3Provider(window.ethereum);
+            
+            // Request account access
+            await provider.send("eth_requestAccounts", []);
+            signer = provider.getSigner();
+            userAddress = await signer.getAddress();
+            document.getElementById("walletAddress").innerText = `Wallet: ${userAddress}`;
 
-        // Check if the user is connected to the correct network
-        const network = await provider.getNetwork();
-        console.log("Connected to network:", network);
-        
-        // Example: check for local network (chainId: 31337)
-        console.log("Current chain ID:", network.chainId);
-        if (network.chainId !== 31337) { // For local testnet (Anvil, Ganache)
-            alert("Please connect to the correct network!");
-            return;
+            // Check the network
+            const network = await provider.getNetwork();
+            console.log("Connected to network:", network);
+
+            // Supported networks
+            const supportedNetworks = {
+                31337: "Local Network",
+                5: "Goerli Testnet",
+                1: "Ethereum Mainnet",
+            };
+
+            if (!supportedNetworks[network.chainId]) {
+                alert(`Unsupported network! Please connect to one of the following: ${Object.values(supportedNetworks).join(", ")}`);
+                return;
+            }
+
+            console.log(`Connected to ${supportedNetworks[network.chainId]}`);
+
+            // Initialize contract
+            contract = new ethers.Contract(contractAddress, contractABI, signer);
+            console.log("Contract initialized:", contract);
+            alert("Wallet connected!");
+        } catch (error) {
+            console.error("Error connecting wallet:", error);
+            alert("Failed to connect wallet. Check the console for details.");
         }
+    } else {
+        alert("Please install MetaMask!");
+    }
+}
+// Add Member
+async function addMember() {
+    if (!signer) {
+        alert("Please connect your wallet first!");
+        return;
+    }
+    const newMember = document.getElementById("newMember").value;
 
-        // Initialize contract
-        contract = new ethers.Contract(contractAddress, contractABI, signer);
-        console.log("Contract initialized:", contract);
-        alert("Wallet connected!");
+    if (!newMember) {
+        alert("Please enter a member address!");
+        return;
+    }
+
+    try {
+        const tx = await contract.addMember(newMember);
+        await tx.wait(); // Wait for the transaction to be mined
+        alert("Member added successfully!");
+    } catch (error) {
+        console.error("Error adding member:", error);
+        alert("Failed to add member. Check the console for details.");
+    }
+}
+// Switch to Goerli Testnet
+async function switchToGoerli() {
+    if (window.ethereum) {
+        try {
+            await window.ethereum.request({
+                method: 'wallet_switchEthereumChain',
+                params: [{ chainId: '0x5' }], // Goerli's chain ID
+            });
+            alert("Switched to Goerli Testnet!");
+        } catch (error) {
+            console.error("Error switching to Goerli:", error);
+            alert("Failed to switch to Goerli. Check the console for details.");
+        }
     } else {
         alert("Please install MetaMask!");
     }

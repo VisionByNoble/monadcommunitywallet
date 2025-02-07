@@ -3,6 +3,8 @@ pragma solidity ^0.8.28;
 
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
+// This contract allows a group of members to manage a community wallet. Members can send funds to other addresses, and the owner can add or remove members and transfer ownership.
+
 contract CommunityWallet is ReentrancyGuard {
     address public owner;
     mapping(address => bool) public members;
@@ -54,7 +56,7 @@ contract CommunityWallet is ReentrancyGuard {
     // Send funds to another address (only members can do this)
     function sendMoney(address payable _to, uint256 _amount) public onlyMembers nonReentrant {
         require(address(this).balance >= _amount, "Insufficient balance in wallet");
-        (bool success, ) = _to.call{value: _amount}("");
+        (bool success,) = _to.call{value: _amount}("");
         require(success, "Transfer failed!");
         emit FundsSent(_to, _amount);
     }

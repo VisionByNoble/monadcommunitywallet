@@ -99,7 +99,7 @@ contract CommunityWallet is ReentrancyGuard {
     function sendMoney(address payable _to, uint256 _amount) public onlyMembers nonReentrant {
         require(_to != address(0), "Cannot send to zero address!");
         require(address(this).balance >= _amount, "Insufficient balance in wallet!");
-        (bool success, ) = _to.call{value: _amount}("");
+        (bool success,) = _to.call{value: _amount}("");
         require(success, "Transfer failed!");
         emit FundsSent(_to, _amount);
     }

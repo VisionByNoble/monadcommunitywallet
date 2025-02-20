@@ -66,7 +66,7 @@ contract CommunityWalletTest is Test {
     function test_ReceiveFunds() public {
         vm.deal(member1, 2 ether);
         vm.prank(member1);
-        (bool success, ) = address(wallet).call{value: 2 ether}("");
+        (bool success,) = address(wallet).call{value: 2 ether}("");
         assertTrue(success);
         assertEq(wallet.getBalance(), 12 ether);
     }
@@ -74,7 +74,7 @@ contract CommunityWalletTest is Test {
     function test_ReentrancyGuard() public {
         // Deploy the malicious receiver
         MaliciousReceiver malicious = new MaliciousReceiver(address(wallet));
-        
+
         // Add the malicious contract as a member
         vm.prank(owner);
         wallet.addMember(address(malicious));

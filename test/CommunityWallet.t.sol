@@ -3,130 +3,99 @@ pragma solidity ^0.8.28;
 
 import "forge-std/Test.sol";
 import "../src/CommunityWallet.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-/// @title CommunityWalletTest - Test suite for the CommunityWallet contract
-contract CommunityWalletTest is Test {
-    CommunityWallet wallet;
-    address owner = address(0x1);
-    address member1 = address(0x2);
-    address member2 = address(0x3);
-    address nonMember = address(0x4);
-    address recipient = address(0x5);
+// Mock ERC-20 token for testing
+contract MockERC20 is ERC20 {
+    constructor(string memory name, string memory symbol) ERC20(name, symbol) {}
 
-    /// @notice Sets up the test environment by deploying the wallet and funding it
-    function setUp() public {
-        vm.prank(owner);
-        wallet = new CommunityWallet();
-        vm.deal(address(wallet), 10 ether); // Fund the wallet with 10 ETH
-    }
-
-    /// @notice Tests the initial state of the wallet after deployment
-    function test_InitialState() public view {
-        assertEq(wallet.owner(), owner);
-        assertTrue(wallet.members(owner));
-        assertEq(wallet.getBalance(), 10 ether);
-    }
-
-    /// @notice Tests the VERSION constant
-    function test_Version() public view {
-        assertEq(wallet.VERSION(), "1.0.0");
-    }
-
-    /// @notice Tests adding a new member
-    function test_AddMember() public {
-        vm.prank(owner);
-        wallet.addMember(member1);
-        assertTrue(wallet.members(member1));
-    }
-
-    /// @notice Tests removing an existing member
-    function test_RemoveMember() public {
-        vm.startPrank(owner);
-        wallet.addMember(member1);
-        wallet.removeMember(member1);
-        vm.stopPrank();
-        assertFalse(wallet.members(member1));
-    }
-
-    /// @notice Tests the two-step ownership transfer process
-    function test_TransferOwnership() public {
-        vm.prank(owner);
-        wallet.transferOwnership(member1);
-
-        vm.prank(member1);
-        wallet.acceptOwnership();
-
-        assertEq(wallet.owner(), member1);
-        assertTrue(wallet.members(member1));
-    }
-
-    /// @notice Tests sending funds to an external address
-    function test_SendMoney() public {
-        vm.prank(owner);
-        wallet.sendMoney(payable(recipient), 1 ether);
-
-        assertEq(address(wallet).balance, 9 ether);
-        assertEq(recipient.balance, 1 ether);
-    }
-
-    /// @notice Tests that only members can send money
-    function test_OnlyMembersCanSendMoney() public {
-        vm.prank(nonMember);
-        vm.expectRevert("You're not a member!");
-        wallet.sendMoney(payable(recipient), 1 ether);
-    }
-
-    /// @notice Tests receiving funds into the wallet
-    function test_ReceiveFunds() public {
-        vm.deal(member1, 2 ether);
-        vm.prank(member1);
-        (bool success,) = address(wallet).call{value: 2 ether}("");
-        assertTrue(success);
-        assertEq(wallet.getBalance(), 12 ether);
-    }
-
-    /// @notice Tests reentrancy protection using a malicious receiver
-    function test_ReentrancyGuard() public {
-        // Deploy the malicious receiver
-        MaliciousReceiver malicious = new MaliciousReceiver(address(wallet));
-
-        // Add the malicious contract as a member
-        vm.prank(owner);
-        wallet.addMember(address(malicious));
-
-        // Fund the wallet
-        vm.deal(address(wallet), 2 ether);
-
-        // Record initial balances
-        uint256 initialWalletBalance = address(wallet).balance;
-        uint256 initialMaliciousBalance = address(malicious).balance;
-
-        // Call sendMoney and expect it to revert due to reentrancy
-        vm.prank(owner);
-        try wallet.sendMoney(payable(address(malicious)), 1 ether) {
-            assertTrue(false, "Expected sendMoney to revert due to reentrancy");
-        } catch {
-            // Verify reentrancy was prevented: no funds were transferred
-            assertEq(address(wallet).balance, initialWalletBalance, "Wallet balance should not change");
-            assertEq(address(malicious).balance, initialMaliciousBalance, "Malicious balance should not change");
-        }
+    function mint(address to, uint256 amount) public {
+        _mint(to, amount);
     }
 }
 
-/// @title MaliciousReceiver - Helper contract to test reentrancy
-contract MaliciousReceiver {
+contract CommunityWalletTest is Test {
     CommunityWallet wallet;
-    bool public reentrancyAttempted;
+    MockERC20 token;
+    address owner = address(0x1);
+    address user1 = address(0x2);
+    address user2 = address(0x3);
 
-    constructor(address _wallet) {
-        wallet = CommunityWallet(payable(_wallet));
+    function setUp() public {
+        vm.prank(owner);
+        wallet = new CommunityWallet();
+
+        // Deploy a mock ERC-20 token
+        token = new MockERC20("MockToken", "MTK");
+        token.mint(user1, 1000 ether); // Mint tokens to user1 for testing
     }
 
-    receive() external payable {
-        if (!reentrancyAttempted) {
-            reentrancyAttempted = true;
-            // Attempt reentrancy
-            wallet.sendMoney(payable(address(this)), 0.5 ether);
-        }
+    function testOwnerInitialization() public view {
+        assertEq(wallet.owner(), owner, "Owner should be the deployer");
+    }
+
+    function testSendETH() public {
+        // Fund the wallet
+        vm.deal(address(wallet), 1 ether);
+
+        // Send ETH
+        vm.prank(owner);
+        wallet.sendETH(payable(user1), 0.5 ether);
+
+        assertEq(user1.balance, 0.5 ether, "User1 should receive 0.5 ETH");
+        assertEq(address(wallet).balance, 0.5 ether, "Wallet should have 0.5 ETH left");
+    }
+
+    function testSendTokens() public {
+        // Donate tokens to the wallet
+        vm.prank(user1);
+        token.approve(address(wallet), 500 ether);
+        vm.prank(user1);
+        wallet.donateTokens(address(token), 500 ether);
+
+        // Send tokens
+        vm.prank(owner);
+        wallet.sendTokens(address(token), user2, 300 ether);
+
+        assertEq(token.balanceOf(user2), 300 ether, "User2 should receive 300 tokens");
+        assertEq(token.balanceOf(address(wallet)), 200 ether, "Wallet should have 200 tokens left");
+    }
+
+    function testDonateTokens() public {
+        // Approve and donate tokens
+        vm.prank(user1);
+        token.approve(address(wallet), 500 ether);
+        vm.prank(user1);
+        wallet.donateTokens(address(token), 500 ether);
+
+        assertEq(token.balanceOf(address(wallet)), 500 ether, "Wallet should have 500 tokens");
+    }
+
+    function testOnlyOwnerCanSendETH() public {
+        vm.prank(user1);
+        vm.expectRevert(CommunityWallet.OnlyOwner.selector); // Expect custom error
+        wallet.sendETH(payable(user2), 0.1 ether);
+    }
+
+    function testOnlyOwnerCanSendTokens() public {
+        vm.prank(user1);
+        vm.expectRevert(CommunityWallet.OnlyOwner.selector); // Expect custom error
+        wallet.sendTokens(address(token), user2, 100 ether);
+    }
+
+    function testCannotSendToZeroAddress() public {
+        vm.prank(owner);
+        vm.expectRevert(CommunityWallet.ZeroAddress.selector); // Expect custom error
+        wallet.sendETH(payable(address(0)), 0.1 ether);
+
+        vm.prank(owner);
+        vm.expectRevert(CommunityWallet.ZeroAddress.selector); // Expect custom error
+        wallet.sendTokens(address(token), address(0), 100 ether);
+    }
+
+    function testCannotDonateZeroTokens() public {
+        vm.prank(user1);
+        vm.expectRevert(CommunityWallet.InvalidAmount.selector); // Expect custom error
+        wallet.donateTokens(address(token), 0);
     }
 }

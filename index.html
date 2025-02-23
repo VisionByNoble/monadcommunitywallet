@@ -38,6 +38,30 @@
             margin-bottom: 20px;
         }
 
+        .contract-address-container {
+            margin: 20px;
+            text-align: center;
+        }
+        .contract-address {
+            font-size: 16px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .copy-button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .copy-button:hover {
+            background-color: #45a049;
+        }
+
         /* Button Styling */
         button {
             background: #9c8cfa;
@@ -117,6 +141,13 @@
     </style>
 </head>
 <body>
+    <div class="contract-address-container">
+        <label for="contract-address">Contract Address:</label>
+        <input type="text" id="contract-address" class="contract-address" value="0x9457FB256290f08aE1584E63FFe5a88f0e26E910" readonly>
+        <br>
+        <button class="copy-button" onclick="copyToClipboard()">Copy Address</button>
+    </div>
+
     <div class="container">
         <h1>Monad Community Wallet</h1>
         <p>Check wallet balance, donate tokens, and send funds.</p>
@@ -135,8 +166,12 @@
         <h3>Donate Tokens</h3>
         <input type="text" id="tokenAddress" placeholder="Token Address">
         <input type="text" id="tokenAmount" placeholder="Amount in Tokens">
-        <button onclick="donateTokens()">Donate Tokens</button>
     </div>
+    <div id="buttonContainer">
+        <button class="donateButton">Donate Tokens</button>
+        <button class="donateButton">Donate More Tokens</button>
+    </div>
+    
 
     <!-- GIF Container -->
     <div class="gif-container">
@@ -158,6 +193,9 @@
             {"type":"constructor","inputs":[],"stateMutability":"nonpayable"},{"type":"fallback","stateMutability":"payable"},{"type":"receive","stateMutability":"payable"},{"type":"function","name":"VERSION","inputs":[],"outputs":[{"name":"","type":"string","internalType":"string"}],"stateMutability":"view"},{"type":"function","name":"acceptOwnership","inputs":[],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"donateTokens","inputs":[{"name":"_token","type":"address","internalType":"address"},{"name":"_amount","type":"uint256","internalType":"uint256"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"getETHBalance","inputs":[],"outputs":[{"name":"","type":"uint256","internalType":"uint256"}],"stateMutability":"view"},{"type":"function","name":"getTokenBalance","inputs":[{"name":"_token","type":"address","internalType":"address"}],"outputs":[{"name":"","type":"uint256","internalType":"uint256"}],"stateMutability":"view"},{"type":"function","name":"owner","inputs":[],"outputs":[{"name":"","type":"address","internalType":"address"}],"stateMutability":"view"},{"type":"function","name":"pendingOwner","inputs":[],"outputs":[{"name":"","type":"address","internalType":"address"}],"stateMutability":"view"},{"type":"function","name":"sendETH","inputs":[{"name":"_to","type":"address","internalType":"address payable"},{"name":"_amount","type":"uint256","internalType":"uint256"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"sendTokens","inputs":[{"name":"_token","type":"address","internalType":"address"},{"name":"_to","type":"address","internalType":"address"},{"name":"_amount","type":"uint256","internalType":"uint256"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"transferOwnership","inputs":[{"name":"newOwner","type":"address","internalType":"address"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"event","name":"FundsReceived","inputs":[{"name":"from","type":"address","indexed":true,"internalType":"address"},{"name":"amount","type":"uint256","indexed":false,"internalType":"uint256"}],"anonymous":false},{"type":"event","name":"FundsSent","inputs":[{"name":"to","type":"address","indexed":true,"internalType":"address"},{"name":"amount","type":"uint256","indexed":false,"internalType":"uint256"}],"anonymous":false},{"type":"event","name":"OwnershipTransferStarted","inputs":[{"name":"oldOwner","type":"address","indexed":true,"internalType":"address"},{"name":"newOwner","type":"address","indexed":true,"internalType":"address"}],"anonymous":false},{"type":"event","name":"OwnershipTransferred","inputs":[{"name":"oldOwner","type":"address","indexed":true,"internalType":"address"},{"name":"newOwner","type":"address","indexed":true,"internalType":"address"}],"anonymous":false},{"type":"event","name":"TokensReceived","inputs":[{"name":"token","type":"address","indexed":true,"internalType":"address"},{"name":"from","type":"address","indexed":true,"internalType":"address"},{"name":"amount","type":"uint256","indexed":false,"internalType":"uint256"}],"anonymous":false},{"type":"event","name":"TokensSent","inputs":[{"name":"token","type":"address","indexed":true,"internalType":"address"},{"name":"to","type":"address","indexed":true,"internalType":"address"},{"name":"amount","type":"uint256","indexed":false,"internalType":"uint256"}],"anonymous":false},{"type":"error","name":"InsufficientBalance","inputs":[]},{"type":"error","name":"InvalidAmount","inputs":[]},{"type":"error","name":"OnlyOwner","inputs":[]},{"type":"error","name":"ReentrancyGuardReentrantCall","inputs":[]},{"type":"error","name":"SafeERC20FailedOperation","inputs":[{"name":"token","type":"address","internalType":"address"}]},{"type":"error","name":"TransferFailed","inputs":[]},{"type":"error","name":"ZeroAddress","inputs":[]}];
 
         // Connect Wallet
+
+
+
         async function connectWallet() {
             if (window.ethereum) {
                 try {
@@ -219,8 +257,13 @@
             }
         }
 
-        // Donate Tokens
-        async function donateTokens() {
+     // Donate Tokens
+     async function donateTokens() {
+
+        if (!window.ethereum) {
+    alert("Please install MetaMask!");
+    return;
+}
             if (!signer) {
                 alert("Please connect your wallet first!");
                 return;
@@ -234,6 +277,12 @@
             }
 
             try {
+                // Approve the contract to spend tokens
+                const tokenContract = new ethers.Contract(tokenAddress, ERC20_ABI, signer);
+                const approveTx = await tokenContract.approve(contractAddress, ethers.utils.parseUnits(amount, 18));
+                await approveTx.wait();
+
+                // Donate tokens
                 const tx = await contract.donateTokens(tokenAddress, ethers.utils.parseUnits(amount, 18));
                 await tx.wait();
                 alert("Tokens donated successfully!");
@@ -242,6 +291,25 @@
                 alert("Failed to donate tokens. Check the console for details.");
             }
         }
+
+        document.getElementById("buttonContainer").addEventListener("click", event => {
+    if (event.target.classList.contains("donateButton")) {
+        donateTokens();
+    }
+});
+
+function donateTokens() {
+    console.log("Tokens donated!");
+}
+
+
+        function copyToClipboard() {
+        const contractAddress = document.getElementById('contract-address');
+        contractAddress.select();
+        contractAddress.setSelectionRange(0, 99999); // For mobile devices
+        document.execCommand('copy');
+        alert('Contract Address copied to clipboard!');
+    }
     </script>
 </body>
 </html>

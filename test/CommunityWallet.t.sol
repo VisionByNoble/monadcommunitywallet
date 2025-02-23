@@ -25,74 +25,57 @@ contract CommunityWalletTest is Test {
         vm.prank(owner);
         wallet = new CommunityWallet();
 
-        // Deploy a mock ERC-20 token
         token = new MockERC20("MockToken", "MTK");
         token.mint(user1, 1000 ether); // Mint tokens to user1 for testing
     }
 
+    // Test that the owner is the one who deployed the contract
     function testOwnerInitialization() public view {
         assertEq(wallet.owner(), owner, "Owner should be the deployer");
     }
 
-    function testSendETH() public {
-        // Fund the wallet
+    // Test ETH send restricted to only the contract
+    function testSendETHRestricted() public {
         vm.deal(address(wallet), 1 ether);
 
-        // Send ETH
+        // Owner tries to send ETH
         vm.prank(owner);
+        vm.expectRevert(CommunityWallet.OnlyContractCanSend.selector);
         wallet.sendETH(payable(user1), 0.5 ether);
-
-        assertEq(user1.balance, 0.5 ether, "User1 should receive 0.5 ETH");
-        assertEq(address(wallet).balance, 0.5 ether, "Wallet should have 0.5 ETH left");
     }
 
-    function testSendTokens() public {
-        // Donate tokens to the wallet
-        vm.prank(user1);
-        token.approve(address(wallet), 500 ether);
-        vm.prank(user1);
-        wallet.donateTokens(address(token), 500 ether);
-
-        // Send tokens
+    // Test token send restricted to only the contract
+    function testSendTokensRestricted() public {
         vm.prank(owner);
+        vm.expectRevert(CommunityWallet.OnlyContractCanSend.selector);
         wallet.sendTokens(address(token), user2, 300 ether);
-
-        assertEq(token.balanceOf(user2), 300 ether, "User2 should receive 300 tokens");
-        assertEq(token.balanceOf(address(wallet)), 200 ether, "Wallet should have 200 tokens left");
     }
 
+    // Test donating tokens to the contract
     function testDonateTokens() public {
-        // Approve and donate tokens
         vm.prank(user1);
         token.approve(address(wallet), 500 ether);
         vm.prank(user1);
         wallet.donateTokens(address(token), 500 ether);
 
+        // Validate donation
         assertEq(token.balanceOf(address(wallet)), 500 ether, "Wallet should have 500 tokens");
     }
 
-    function testOnlyOwnerCanSendETH() public {
-        vm.prank(user1);
-        vm.expectRevert(CommunityWallet.OnlyOwner.selector); // Expect custom error
-        wallet.sendETH(payable(user2), 0.1 ether);
-    }
-
-    function testOnlyOwnerCanSendTokens() public {
-        vm.prank(user1);
-        vm.expectRevert(CommunityWallet.OnlyOwner.selector); // Expect custom error
-        wallet.sendTokens(address(token), user2, 100 ether);
-    }
-
+    // Test sending ETH or tokens to zero address
     function testCannotSendToZeroAddress() public {
-        vm.prank(owner);
-        vm.expectRevert(CommunityWallet.ZeroAddress.selector); // Expect custom error
+        // Test sending ETH to zero address by contract (should fail with OnlyContractCanSend())
+        vm.prank(address(wallet)); // Contract itself, not the owner
+        vm.expectRevert(CommunityWallet.ZeroAddress.selector); // Expect ZeroAddress error
         wallet.sendETH(payable(address(0)), 0.1 ether);
 
-        vm.prank(owner);
-        vm.expectRevert(CommunityWallet.ZeroAddress.selector); // Expect custom error
+        // Test sending tokens to zero address by contract (should fail with OnlyContractCanSend())
+        vm.prank(address(wallet)); // Contract itself, not the owner
+        vm.expectRevert(CommunityWallet.ZeroAddress.selector); // Expect ZeroAddress error
         wallet.sendTokens(address(token), address(0), 100 ether);
     }
 
+    // Test that zero tokens cannot be donated
     function testCannotDonateZeroTokens() public {
         vm.prank(user1);
         vm.expectRevert(CommunityWallet.InvalidAmount.selector); // Expect custom error

@@ -166,12 +166,8 @@
         <h3>Donate Tokens</h3>
         <input type="text" id="tokenAddress" placeholder="Token Address">
         <input type="text" id="tokenAmount" placeholder="Amount in Tokens">
+        <button onclick="donateTokens()">Donate Tokens</button>
     </div>
-    <div id="buttonContainer">
-        <button class="donateButton">Donate Tokens</button>
-        <button class="donateButton">Donate More Tokens</button>
-    </div>
-    
 
     <!-- GIF Container -->
     <div class="gif-container">
@@ -190,15 +186,41 @@
         // Replace with your contract's ABI and address
         const contractAddress = "0x9457FB256290f08aE1584E63FFe5a88f0e26E910"; // Replace with the address from Foundry deployment
         const contractABI = [
-            {"type":"constructor","inputs":[],"stateMutability":"nonpayable"},{"type":"fallback","stateMutability":"payable"},{"type":"receive","stateMutability":"payable"},{"type":"function","name":"VERSION","inputs":[],"outputs":[{"name":"","type":"string","internalType":"string"}],"stateMutability":"view"},{"type":"function","name":"acceptOwnership","inputs":[],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"donateTokens","inputs":[{"name":"_token","type":"address","internalType":"address"},{"name":"_amount","type":"uint256","internalType":"uint256"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"getETHBalance","inputs":[],"outputs":[{"name":"","type":"uint256","internalType":"uint256"}],"stateMutability":"view"},{"type":"function","name":"getTokenBalance","inputs":[{"name":"_token","type":"address","internalType":"address"}],"outputs":[{"name":"","type":"uint256","internalType":"uint256"}],"stateMutability":"view"},{"type":"function","name":"owner","inputs":[],"outputs":[{"name":"","type":"address","internalType":"address"}],"stateMutability":"view"},{"type":"function","name":"pendingOwner","inputs":[],"outputs":[{"name":"","type":"address","internalType":"address"}],"stateMutability":"view"},{"type":"function","name":"sendETH","inputs":[{"name":"_to","type":"address","internalType":"address payable"},{"name":"_amount","type":"uint256","internalType":"uint256"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"sendTokens","inputs":[{"name":"_token","type":"address","internalType":"address"},{"name":"_to","type":"address","internalType":"address"},{"name":"_amount","type":"uint256","internalType":"uint256"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"transferOwnership","inputs":[{"name":"newOwner","type":"address","internalType":"address"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"event","name":"FundsReceived","inputs":[{"name":"from","type":"address","indexed":true,"internalType":"address"},{"name":"amount","type":"uint256","indexed":false,"internalType":"uint256"}],"anonymous":false},{"type":"event","name":"FundsSent","inputs":[{"name":"to","type":"address","indexed":true,"internalType":"address"},{"name":"amount","type":"uint256","indexed":false,"internalType":"uint256"}],"anonymous":false},{"type":"event","name":"OwnershipTransferStarted","inputs":[{"name":"oldOwner","type":"address","indexed":true,"internalType":"address"},{"name":"newOwner","type":"address","indexed":true,"internalType":"address"}],"anonymous":false},{"type":"event","name":"OwnershipTransferred","inputs":[{"name":"oldOwner","type":"address","indexed":true,"internalType":"address"},{"name":"newOwner","type":"address","indexed":true,"internalType":"address"}],"anonymous":false},{"type":"event","name":"TokensReceived","inputs":[{"name":"token","type":"address","indexed":true,"internalType":"address"},{"name":"from","type":"address","indexed":true,"internalType":"address"},{"name":"amount","type":"uint256","indexed":false,"internalType":"uint256"}],"anonymous":false},{"type":"event","name":"TokensSent","inputs":[{"name":"token","type":"address","indexed":true,"internalType":"address"},{"name":"to","type":"address","indexed":true,"internalType":"address"},{"name":"amount","type":"uint256","indexed":false,"internalType":"uint256"}],"anonymous":false},{"type":"error","name":"InsufficientBalance","inputs":[]},{"type":"error","name":"InvalidAmount","inputs":[]},{"type":"error","name":"OnlyOwner","inputs":[]},{"type":"error","name":"ReentrancyGuardReentrantCall","inputs":[]},{"type":"error","name":"SafeERC20FailedOperation","inputs":[{"name":"token","type":"address","internalType":"address"}]},{"type":"error","name":"TransferFailed","inputs":[]},{"type":"error","name":"ZeroAddress","inputs":[]}];
+            {"type":"constructor","inputs":[],"stateMutability":"nonpayable"},{"type":"fallback","stateMutability":"payable"},{"type":"receive","stateMutability":"payable"},{"type":"function","name":"VERSION","inputs":[],"outputs":[{"name":"","type":"string","internalType":"string"}],"stateMutability":"view"},{"type":"function","name":"acceptOwnership","inputs":[],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"donateTokens","inputs":[{"name":"_token","type":"address","internalType":"address"},{"name":"_amount","type":"uint256","internalType":"uint256"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"getETHBalance","inputs":[],"outputs":[{"name":"","type":"uint256","internalType":"uint256"}],"stateMutability":"view"},{"type":"function","name":"getTokenBalance","inputs":[{"name":"_token","type":"address","internalType":"address"}],"outputs":[{"name":"","type":"uint256","internalType":"uint256"}],"stateMutability":"view"},{"type":"function","name":"owner","inputs":[],"outputs":[{"name":"","type":"address","internalType":"address"}],"stateMutability":"view"},{"type":"function","name":"pendingOwner","inputs":[],"outputs":[{"name":"","type":"address","internalType":"address"}],"stateMutability":"view"},{"type":"function","name":"sendETH","inputs":[{"name":"_to","type":"address","internalType":"address payable"},{"name":"_amount","type":"uint256","internalType":"uint256"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"sendTokens","inputs":[{"name":"_token","type":"address","internalType":"address"},{"name":"_to","type":"address","internalType":"address"},{"name":"_amount","type":"uint256","internalType":"uint256"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"transferOwnership","inputs":[{"name":"newOwner","type":"address","internalType":"address"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"event","name":"FundsReceived","inputs":[{"name":"from","type":"address","indexed":true,"internalType":"address"},{"name":"amount","type":"uint256","indexed":false,"internalType":"uint256"}],"anonymous":false},{"type":"event","name":"FundsSent","inputs":[{"name":"to","type":"address","indexed":true,"internalType":"address"},{"name":"amount","type":"uint256","indexed":false,"internalType":"uint256"}],"anonymous":false},{"type":"event","name":"OwnershipTransferStarted","inputs":[{"name":"oldOwner","type":"address","indexed":true,"internalType":"address"},{"name":"newOwner","type":"address","indexed":true,"internalType":"address"}],"anonymous":false},{"type":"event","name":"OwnershipTransferred","inputs":[{"name":"oldOwner","type":"address","indexed":true,"internalType":"address"},{"name":"newOwner","type":"address","indexed":true,"internalType":"address"}],"anonymous":false},{"type":"event","name":"TokensReceived","inputs":[{"name":"token","type":"address","indexed":true,"internalType":"address"},{"name":"from","type":"address","indexed":true,"internalType":"address"},{"name":"amount","type":"uint256","indexed":false,"internalType":"uint256"}],"anonymous":false},{"type":"event","name":"TokensSent","inputs":[{"name":"token","type":"address","indexed":true,"internalType":"address"},{"name":"to","type":"address","indexed":true,"internalType":"address"},{"name":"amount","type":"uint256","indexed":false,"internalType":"uint256"}],"anonymous":false},{"type":"error","name":"InsufficientBalance","inputs":[]},{"type":"error","name":"InvalidAmount","inputs":[]},{"type":"error","name":"OnlyOwner","inputs":[]},{"type":"error","name":"ReentrancyGuardReentrantCall","inputs":[]},{"type":"error","name":"SafeERC20FailedOperation","inputs":[{"name":"token","type":"address","internalType":"address"}]},{"type":"error","name":"TransferFailed","inputs":[]},{"type":"error","name":"ZeroAddress","inputs":[]}
+        ];
+
+        // Define ERC-20 ABI (minimal ABI for approve and balanceOf)
+        const ERC20_ABI = [
+            {
+                "constant": false,
+                "inputs": [
+                    {"name": "spender", "type": "address"},
+                    {"name": "value", "type": "uint256"}
+                ],
+                "name": "approve",
+                "outputs": [{"name": "", "type": "bool"}],
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [{"name": "owner", "type": "address"}],
+                "name": "balanceOf",
+                "outputs": [{"name": "", "type": "uint256"}],
+                "type": "function"
+            }
+        ];
 
         // Connect Wallet
-
-
-
         async function connectWallet() {
             if (window.ethereum) {
                 try {
+                    // Check network
+                    const chainId = await window.ethereum.request({ method: "eth_chainId" });
+                    if (chainId !== "0x1") { // Ethereum Mainnet
+                        alert("Please switch to Ethereum Mainnet!");
+                        return;
+                    }
+
                     provider = new ethers.providers.Web3Provider(window.ethereum);
                     await provider.send("eth_requestAccounts", []);
                     signer = provider.getSigner();
@@ -242,28 +264,41 @@
             const recipient = document.getElementById("recipient").value;
             const amount = document.getElementById("amount").value;
 
-            if (!recipient || !amount) {
-                alert("Please fill in all fields!");
+            if (!isValidEthereumAddress(recipient)) {
+                alert("Invalid recipient address!");
                 return;
             }
+
+            if (!isValidAmount(amount)) {
+                alert("Invalid amount!");
+                return;
+            }
+
+            const sendButton = document.querySelector("button[onclick='sendFunds()']");
+            sendButton.disabled = true;
+            sendButton.innerText = "Sending...";
 
             try {
                 const tx = await contract.sendETH(recipient, ethers.utils.parseEther(amount));
                 await tx.wait();
                 alert("Funds sent successfully!");
             } catch (error) {
-                console.error("Error sending funds:", error);
-                alert("Failed to send funds. Check the console for details.");
+                if (error.code === "INSUFFICIENT_FUNDS") {
+                    alert("Insufficient balance!");
+                } else if (error.code === "ACTION_REJECTED") {
+                    alert("Transaction rejected by user.");
+                } else {
+                    console.error("Error sending funds:", error);
+                    alert("Failed to send funds. Check the console for details.");
+                }
+            } finally {
+                sendButton.disabled = false;
+                sendButton.innerText = "Send";
             }
         }
 
-     // Donate Tokens
-     async function donateTokens() {
-
-        if (!window.ethereum) {
-    alert("Please install MetaMask!");
-    return;
-}
+        // Donate Tokens
+        async function donateTokens() {
             if (!signer) {
                 alert("Please connect your wallet first!");
                 return;
@@ -271,14 +306,25 @@
             const tokenAddress = document.getElementById("tokenAddress").value;
             const amount = document.getElementById("tokenAmount").value;
 
-            if (!tokenAddress || !amount) {
-                alert("Please fill in all fields!");
+            if (!isValidEthereumAddress(tokenAddress)) {
+                alert("Invalid token address!");
                 return;
             }
 
+            if (!isValidAmount(amount)) {
+                alert("Invalid amount!");
+                return;
+            }
+
+            const donateButton = document.querySelector("button[onclick='donateTokens()']");
+            donateButton.disabled = true;
+            donateButton.innerText = "Donating...";
+
             try {
-                // Approve the contract to spend tokens
+                // Initialize the ERC-20 token contract
                 const tokenContract = new ethers.Contract(tokenAddress, ERC20_ABI, signer);
+
+                // Approve the contract to spend tokens
                 const approveTx = await tokenContract.approve(contractAddress, ethers.utils.parseUnits(amount, 18));
                 await approveTx.wait();
 
@@ -289,27 +335,29 @@
             } catch (error) {
                 console.error("Error donating tokens:", error);
                 alert("Failed to donate tokens. Check the console for details.");
+            } finally {
+                donateButton.disabled = false;
+                donateButton.innerText = "Donate Tokens";
             }
         }
 
-        document.getElementById("buttonContainer").addEventListener("click", event => {
-    if (event.target.classList.contains("donateButton")) {
-        donateTokens();
-    }
-});
+        // Input Validation
+        function isValidEthereumAddress(address) {
+            return /^0x[a-fA-F0-9]{40}$/.test(address);
+        }
 
-function donateTokens() {
-    console.log("Tokens donated!");
-}
+        function isValidAmount(amount) {
+            return !isNaN(amount) && parseFloat(amount) > 0;
+        }
 
-
+        // Copy Contract Address to Clipboard
         function copyToClipboard() {
-        const contractAddress = document.getElementById('contract-address');
-        contractAddress.select();
-        contractAddress.setSelectionRange(0, 99999); // For mobile devices
-        document.execCommand('copy');
-        alert('Contract Address copied to clipboard!');
-    }
+            const contractAddressInput = document.getElementById('contract-address');
+            contractAddressInput.select();
+            contractAddressInput.setSelectionRange(0, 99999); // For mobile devices
+            document.execCommand('copy');
+            alert('Contract Address copied to clipboard!');
+        }
     </script>
 </body>
 </html>

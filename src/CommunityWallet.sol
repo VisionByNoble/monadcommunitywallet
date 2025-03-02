@@ -12,7 +12,7 @@ contract CommunityWallet is ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     /// @notice Address of the wallet's owner (immutable to save gas)
-    address public immutable owner;
+    address public owner;
 
     /// @notice Address nominated for ownership transfer (two-step process)
     address public pendingOwner;
@@ -62,8 +62,10 @@ contract CommunityWallet is ReentrancyGuard {
 
     /// @notice Completes the ownership transfer process
     function acceptOwnership() public {
+        address oldOwner = owner;
         if (msg.sender != pendingOwner) revert OnlyOwner();
-        emit OwnershipTransferred(owner, pendingOwner);
+        owner = pendingOwner;
+        emit OwnershipTransferred(oldOwner, msg.sender);
         pendingOwner = address(0);
     }
 

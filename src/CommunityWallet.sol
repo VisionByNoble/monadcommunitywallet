@@ -4,12 +4,14 @@ pragma solidity ^0.8.28;
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 
 /// @title CommunityWallet - A decentralized wallet for managing community funds
 /// @notice Allows donations in ETH and ERC-20 tokens. Only the contract itself can send funds out.
 /// @dev Uses OpenZeppelin's ReentrancyGuard for security and SafeERC20 for safe token transfers.
 contract CommunityWallet is ReentrancyGuard {
     using SafeERC20 for IERC20;
+    using Address for address payable;
 
     /// @notice Address of the wallet's owner (immutable to save gas)
     address public owner;
@@ -22,6 +24,7 @@ contract CommunityWallet is ReentrancyGuard {
 
     // Custom Errors (Saves gas compared to require() strings)
     error OnlyOwner();
+    error OnlyPendingOwner();
     error ZeroAddress();
     error InsufficientBalance();
     error TransferFailed();
@@ -62,48 +65,25 @@ contract CommunityWallet is ReentrancyGuard {
 
     /// @notice Completes the ownership transfer process
     function acceptOwnership() public {
+        if (msg.sender != pendingOwner) revert OnlyPendingOwner();
         address oldOwner = owner;
-        if (msg.sender != pendingOwner) revert OnlyOwner();
         owner = pendingOwner;
-        emit OwnershipTransferred(oldOwner, msg.sender);
         pendingOwner = address(0);
-    }
-
-    // Add checks to prevent sending to zero address
-    function sendETHCheck(address payable to, uint256 amount) public {
-        if (to == address(0)) {
-            revert ZeroAddress();
-        }
-        if (msg.sender != address(this)) {
-            revert OnlyContractCanSend();
-        }
-        to.transfer(amount);
-    }
-
-    function sendTokensCheck(address token, address to, uint256 amount) public {
-        if (to == address(0)) {
-            revert ZeroAddress();
-        }
-        if (msg.sender != address(this)) {
-            revert OnlyContractCanSend();
-        }
-        IERC20(token).transfer(to, amount);
+        emit OwnershipTransferred(oldOwner, msg.sender);
     }
 
     /// @notice Sends ETH from the wallet, callable only by the contract itself
     function sendETH(address payable _to, uint256 _amount) public onlyContract nonReentrant {
-        if (_to == address(0)) revert ZeroAddress(); // Zero address check first
+        if (_to == address(0)) revert ZeroAddress();
         if (address(this).balance < _amount) revert InsufficientBalance();
 
-        (bool success,) = _to.call{value: _amount}("");
-        if (!success) revert TransferFailed();
-
+        _to.sendValue(_amount); // Uses OpenZeppelin's safe ETH transfer
         emit FundsSent(_to, _amount);
     }
 
     /// @notice Sends ERC-20 tokens from the wallet, callable only by the contract itself
     function sendTokens(address _token, address _to, uint256 _amount) public onlyContract nonReentrant {
-        if (_to == address(0)) revert ZeroAddress(); // Zero address check first
+        if (_to == address(0)) revert ZeroAddress();
         if (IERC20(_token).balanceOf(address(this)) < _amount) revert InsufficientBalance();
 
         IERC20(_token).safeTransfer(_to, _amount);
@@ -115,7 +95,6 @@ contract CommunityWallet is ReentrancyGuard {
         if (_token == address(0)) revert ZeroAddress();
         if (_amount == 0) revert InvalidAmount();
 
-        // Replacing safeTransferFrom with transfer to save gas
         IERC20(_token).transferFrom(msg.sender, address(this), _amount);
         emit TokensReceived(_token, msg.sender, _amount);
     }

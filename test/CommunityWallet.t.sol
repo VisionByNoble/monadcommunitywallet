@@ -16,22 +16,31 @@ contract MockERC20 is ERC20 {
 
 contract CommunityWalletTest is Test {
     CommunityWallet wallet;
-    MockERC20 token;
+    MockERC20 monToken;
     address owner = address(0x1);
     address user1 = address(0x2);
     address user2 = address(0x3);
 
     function setUp() public {
-        vm.prank(owner);
-        wallet = new CommunityWallet();
+        // Deploy mock MON token first
+        monToken = new MockERC20("Mock MON", "MON");
 
-        token = new MockERC20("MockToken", "MTK");
-        token.mint(user1, 1000 ether); // Mint tokens to user1 for testing
+        // Deploy wallet with mock MON token address as owner
+        vm.prank(owner);
+        wallet = new CommunityWallet(address(monToken));
+
+        // Mint tokens to user1 for testing
+        monToken.mint(user1, 1000 ether);
     }
 
     // Test that the owner is the one who deployed the contract
     function testOwnerInitialization() public view {
         assertEq(wallet.owner(), owner, "Owner should be the deployer");
+    }
+
+    // Test that the MON token address is set correctly
+    function testMonTokenInitialization() public view {
+        assertEq(wallet.MON_TOKEN(), address(monToken), "MON token address should be set correctly");
     }
 
     // Test ETH send restricted to only the contract
@@ -48,18 +57,18 @@ contract CommunityWalletTest is Test {
     function testSendTokensRestricted() public {
         vm.prank(owner);
         vm.expectRevert(CommunityWallet.OnlyContractCanSend.selector);
-        wallet.sendTokens(address(token), user2, 300 ether);
+        wallet.sendTokens(address(monToken), user2, 300 ether);
     }
 
     // Test donating tokens to the contract
     function testDonateTokens() public {
         vm.prank(user1);
-        token.approve(address(wallet), 500 ether);
+        monToken.approve(address(wallet), 500 ether);
         vm.prank(user1);
-        wallet.donateTokens(address(token), 500 ether);
+        wallet.donateTokens(address(monToken), 500 ether);
 
         // Validate donation
-        assertEq(token.balanceOf(address(wallet)), 500 ether, "Wallet should have 500 tokens");
+        assertEq(monToken.balanceOf(address(wallet)), 500 ether, "Wallet should have 500 tokens");
     }
 
     // Test sending ETH or tokens to zero address
@@ -72,13 +81,31 @@ contract CommunityWalletTest is Test {
         // Test sending tokens to zero address by contract (should fail with OnlyContractCanSend())
         vm.prank(address(wallet)); // Contract itself, not the owner
         vm.expectRevert(CommunityWallet.ZeroAddress.selector); // Expect ZeroAddress error
-        wallet.sendTokens(address(token), address(0), 100 ether);
+        wallet.sendTokens(address(monToken), address(0), 100 ether);
     }
 
     // Test that zero tokens cannot be donated
     function testCannotDonateZeroTokens() public {
         vm.prank(user1);
         vm.expectRevert(CommunityWallet.InvalidAmount.selector); // Expect custom error
-        wallet.donateTokens(address(token), 0);
+        wallet.donateTokens(address(monToken), 0);
+    }
+
+    // Test MON token specific functions
+    function testMonTokenFunctions() public {
+        // Test depositMON
+        vm.prank(user1);
+        monToken.approve(address(wallet), 100 ether);
+        vm.prank(user1);
+        wallet.depositMON(100 ether);
+        assertEq(monToken.balanceOf(address(wallet)), 100 ether, "Wallet should have 100 MON tokens");
+
+        // Test sendMON (should fail for non-contract caller)
+        vm.prank(owner);
+        vm.expectRevert(CommunityWallet.OnlyContractCanSend.selector);
+        wallet.sendMON(user2, 50 ether);
+
+        // Test getMONBalance
+        assertEq(wallet.getMONBalance(), 100 ether, "MON balance should be 100 tokens");
     }
 }

@@ -152,11 +152,23 @@
         <h1>Monad Community Wallet</h1>
         <p>Check wallet balance, donate tokens, and send funds.</p>
         
+        <div id="networkStatus" class="network-status"></div>
         <button onclick="connectWallet()">Connect Wallet</button>
         <p id="walletAddress">Wallet: Not Connected</p>
 
-        <button onclick="getBalance()">Check Balance</button>
+        <h3>Your Wallet</h3>
+        <button onclick="getBalance()">Check Wallet Balance</button>
         <p id="balance">Balance: 0 ETH</p>
+
+        <h3>Contract Balances</h3>
+        <button onclick="getContractBalances()">Check Contract Balances</button>
+        <p id="contractEthBalance">Contract ETH Balance: 0 ETH</p>
+        <p id="contractMonBalance">Contract MON Balance: 0 MON</p>
+
+        <h3>Check Other Token Balance</h3>
+        <input type="text" id="tokenCheckAddress" placeholder="Token Address">
+        <button onclick="getContractTokenBalance()">Check Token Balance</button>
+        <p id="contractTokenBalance">Contract Token Balance: 0 Tokens</p>
 
         <h3>Send Funds</h3>
         <input type="text" id="recipient" placeholder="Recipient Address">
@@ -186,7 +198,23 @@
         // Replace with your contract's ABI and address
         const contractAddress = "0x9457FB256290f08aE1584E63FFe5a88f0e26E910"; // Replace with the address from Foundry deployment
         const contractABI = [
-            {"type":"constructor","inputs":[],"stateMutability":"nonpayable"},{"type":"fallback","stateMutability":"payable"},{"type":"receive","stateMutability":"payable"},{"type":"function","name":"VERSION","inputs":[],"outputs":[{"name":"","type":"string","internalType":"string"}],"stateMutability":"view"},{"type":"function","name":"acceptOwnership","inputs":[],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"donateTokens","inputs":[{"name":"_token","type":"address","internalType":"address"},{"name":"_amount","type":"uint256","internalType":"uint256"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"getETHBalance","inputs":[],"outputs":[{"name":"","type":"uint256","internalType":"uint256"}],"stateMutability":"view"},{"type":"function","name":"getTokenBalance","inputs":[{"name":"_token","type":"address","internalType":"address"}],"outputs":[{"name":"","type":"uint256","internalType":"uint256"}],"stateMutability":"view"},{"type":"function","name":"owner","inputs":[],"outputs":[{"name":"","type":"address","internalType":"address"}],"stateMutability":"view"},{"type":"function","name":"pendingOwner","inputs":[],"outputs":[{"name":"","type":"address","internalType":"address"}],"stateMutability":"view"},{"type":"function","name":"sendETH","inputs":[{"name":"_to","type":"address","internalType":"address payable"},{"name":"_amount","type":"uint256","internalType":"uint256"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"sendTokens","inputs":[{"name":"_token","type":"address","internalType":"address"},{"name":"_to","type":"address","internalType":"address"},{"name":"_amount","type":"uint256","internalType":"uint256"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"transferOwnership","inputs":[{"name":"newOwner","type":"address","internalType":"address"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"event","name":"FundsReceived","inputs":[{"name":"from","type":"address","indexed":true,"internalType":"address"},{"name":"amount","type":"uint256","indexed":false,"internalType":"uint256"}],"anonymous":false},{"type":"event","name":"FundsSent","inputs":[{"name":"to","type":"address","indexed":true,"internalType":"address"},{"name":"amount","type":"uint256","indexed":false,"internalType":"uint256"}],"anonymous":false},{"type":"event","name":"OwnershipTransferStarted","inputs":[{"name":"oldOwner","type":"address","indexed":true,"internalType":"address"},{"name":"newOwner","type":"address","indexed":true,"internalType":"address"}],"anonymous":false},{"type":"event","name":"OwnershipTransferred","inputs":[{"name":"oldOwner","type":"address","indexed":true,"internalType":"address"},{"name":"newOwner","type":"address","indexed":true,"internalType":"address"}],"anonymous":false},{"type":"event","name":"TokensReceived","inputs":[{"name":"token","type":"address","indexed":true,"internalType":"address"},{"name":"from","type":"address","indexed":true,"internalType":"address"},{"name":"amount","type":"uint256","indexed":false,"internalType":"uint256"}],"anonymous":false},{"type":"event","name":"TokensSent","inputs":[{"name":"token","type":"address","indexed":true,"internalType":"address"},{"name":"to","type":"address","indexed":true,"internalType":"address"},{"name":"amount","type":"uint256","indexed":false,"internalType":"uint256"}],"anonymous":false},{"type":"error","name":"InsufficientBalance","inputs":[]},{"type":"error","name":"InvalidAmount","inputs":[]},{"type":"error","name":"OnlyOwner","inputs":[]},{"type":"error","name":"ReentrancyGuardReentrantCall","inputs":[]},{"type":"error","name":"SafeERC20FailedOperation","inputs":[{"name":"token","type":"address","internalType":"address"}]},{"type":"error","name":"TransferFailed","inputs":[]},{"type":"error","name":"ZeroAddress","inputs":[]}
+            {"type":"constructor","inputs":[{"name":"_monToken","type":"address","internalType":"address"}],"stateMutability":"nonpayable"},
+            {"type":"fallback","stateMutability":"payable"},
+            {"type":"receive","stateMutability":"payable"},
+            {"type":"function","name":"VERSION","inputs":[],"outputs":[{"name":"","type":"string","internalType":"string"}],"stateMutability":"view"},
+            {"type":"function","name":"MON_TOKEN","inputs":[],"outputs":[{"name":"","type":"address","internalType":"address"}],"stateMutability":"view"},
+            {"type":"function","name":"acceptOwnership","inputs":[],"outputs":[],"stateMutability":"nonpayable"},
+            {"type":"function","name":"donateTokens","inputs":[{"name":"_token","type":"address","internalType":"address"},{"name":"_amount","type":"uint256","internalType":"uint256"}],"outputs":[],"stateMutability":"nonpayable"},
+            {"type":"function","name":"depositMON","inputs":[{"name":"_amount","type":"uint256","internalType":"uint256"}],"outputs":[],"stateMutability":"nonpayable"},
+            {"type":"function","name":"sendMON","inputs":[{"name":"_to","type":"address","internalType":"address"},{"name":"_amount","type":"uint256","internalType":"uint256"}],"outputs":[],"stateMutability":"nonpayable"},
+            {"type":"function","name":"getETHBalance","inputs":[],"outputs":[{"name":"","type":"uint256","internalType":"uint256"}],"stateMutability":"view"},
+            {"type":"function","name":"getTokenBalance","inputs":[{"name":"_token","type":"address","internalType":"address"}],"outputs":[{"name":"","type":"uint256","internalType":"uint256"}],"stateMutability":"view"},
+            {"type":"function","name":"getMONBalance","inputs":[],"outputs":[{"name":"","type":"uint256","internalType":"uint256"}],"stateMutability":"view"},
+            {"type":"function","name":"owner","inputs":[],"outputs":[{"name":"","type":"address","internalType":"address"}],"stateMutability":"view"},
+            {"type":"function","name":"pendingOwner","inputs":[],"outputs":[{"name":"","type":"address","internalType":"address"}],"stateMutability":"view"},
+            {"type":"function","name":"sendETH","inputs":[{"name":"_to","type":"address","internalType":"address payable"},{"name":"_amount","type":"uint256","internalType":"uint256"}],"outputs":[],"stateMutability":"nonpayable"},
+            {"type":"function","name":"sendTokens","inputs":[{"name":"_token","type":"address","internalType":"address"},{"name":"_to","type":"address","internalType":"address"},{"name":"_amount","type":"uint256","internalType":"uint256"}],"outputs":[],"stateMutability":"nonpayable"},
+            {"type":"function","name":"transferOwnership","inputs":[{"name":"newOwner","type":"address","internalType":"address"}],"outputs":[],"stateMutability":"nonpayable"}
         ];
 
         // Define ERC-20 ABI (minimal ABI for approve and balanceOf)
@@ -252,6 +280,83 @@
             } catch (error) {
                 console.error("Error fetching balance:", error);
                 alert("Failed to fetch balance. Check the console for details.");
+            }
+        }
+
+        // Get Contract Balance
+        async function getContractBalances() {
+            if (!provider) {
+                provider = new ethers.providers.Web3Provider(window.ethereum);
+            }
+            
+            const contract = new ethers.Contract(contractAddress, contractABI, provider);
+            
+            try {
+                // Get ETH balance in the contract
+                const ethBalance = await contract.getETHBalance();
+                const formattedEthBalance = ethers.utils.formatEther(ethBalance);
+                document.getElementById("contractEthBalance").innerText = 
+                    `Contract ETH Balance: ${formattedEthBalance} ETH`;
+
+                // Get MON balance in the contract
+                const monBalance = await contract.getMONBalance();
+                const formattedMonBalance = ethers.utils.formatUnits(monBalance, 18);
+                document.getElementById("contractMonBalance").innerText = 
+                    `Contract MON Balance: ${formattedMonBalance} MON`;
+
+                // Update UI to show success
+                const button = document.querySelector("button[onclick='getContractBalances()']");
+                button.style.backgroundColor = "#4CAF50";
+                setTimeout(() => {
+                    button.style.backgroundColor = "";
+                }, 1000);
+            } catch (error) {
+                console.error("Error fetching contract balances:", error);
+                alert("Error fetching contract balances. Check console for details.");
+            }
+        }
+
+        // Get Token Balance
+        async function getContractTokenBalance() {
+            if (!provider) {
+                provider = new ethers.providers.Web3Provider(window.ethereum);
+            }
+            
+            const tokenAddress = document.getElementById("tokenCheckAddress").value;
+            if (!isValidEthereumAddress(tokenAddress)) {
+                alert("Invalid token address!");
+                return;
+            }
+
+            try {
+                const contract = new ethers.Contract(contractAddress, contractABI, provider);
+                const tokenContract = new ethers.Contract(tokenAddress, ERC20_ABI, provider);
+                
+                // Get token decimals
+                const decimals = await tokenContract.decimals();
+                
+                // Get token balance
+                const balance = await contract.getTokenBalance(tokenAddress);
+                const formattedBalance = ethers.utils.formatUnits(balance, decimals);
+                
+                // Get token symbol if available
+                let symbol = "Tokens";
+                try {
+                    const tokenWithSymbol = new ethers.Contract(
+                        tokenAddress,
+                        [...ERC20_ABI, {"constant":true,"inputs":[],"name":"symbol","outputs":[{"name":"","type":"string"}],"type":"function"}],
+                        provider
+                    );
+                    symbol = await tokenWithSymbol.symbol();
+                } catch (error) {
+                    console.log("Could not fetch token symbol");
+                }
+
+                document.getElementById("contractTokenBalance").innerText = 
+                    `Contract Token Balance: ${formattedBalance} ${symbol}`;
+            } catch (error) {
+                console.error("Error fetching token balance:", error);
+                alert("Error fetching token balance. Make sure the address is correct.");
             }
         }
 

@@ -16,6 +16,9 @@ contract CommunityWallet is ReentrancyGuard {
     /// @notice Address of the wallet's owner (immutable to save gas)
     address public owner;
 
+    /// @notice Address of the MON token contract
+    address public immutable MON_TOKEN;
+
     /// @notice Address nominated for ownership transfer (two-step process)
     address public pendingOwner;
 
@@ -50,9 +53,12 @@ contract CommunityWallet is ReentrancyGuard {
         _;
     }
 
-    /// @notice Contract is deployed with the sender as the owner
-    constructor() {
+    /// @notice Contract is deployed with the sender as the owner and MON token address
+    /// @param _monToken The address of the MON token contract
+    constructor(address _monToken) {
+        if (_monToken == address(0)) revert ZeroAddress();
         owner = msg.sender;
+        MON_TOKEN = _monToken;
     }
 
     /// @notice Initiates the ownership transfer process to a new owner
@@ -95,8 +101,25 @@ contract CommunityWallet is ReentrancyGuard {
         if (_token == address(0)) revert ZeroAddress();
         if (_amount == 0) revert InvalidAmount();
 
-        IERC20(_token).transferFrom(msg.sender, address(this), _amount);
+        IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
         emit TokensReceived(_token, msg.sender, _amount);
+    }
+
+    /// @notice Allows users to deposit MON tokens into the community wallet
+    function depositMON(uint256 _amount) external {
+        if (_amount == 0) revert InvalidAmount();
+
+        IERC20(MON_TOKEN).safeTransferFrom(msg.sender, address(this), _amount);
+        emit TokensReceived(MON_TOKEN, msg.sender, _amount);
+    }
+
+    /// @notice Allows the contract to send MON tokens
+    function sendMON(address _to, uint256 _amount) public onlyContract nonReentrant {
+        if (_to == address(0)) revert ZeroAddress();
+        if (IERC20(MON_TOKEN).balanceOf(address(this)) < _amount) revert InsufficientBalance();
+
+        IERC20(MON_TOKEN).safeTransfer(_to, _amount);
+        emit TokensSent(MON_TOKEN, _to, _amount);
     }
 
     /// @notice Returns the ETH balance of the wallet
@@ -107,6 +130,11 @@ contract CommunityWallet is ReentrancyGuard {
     /// @notice Returns the balance of an ERC-20 token in the wallet
     function getTokenBalance(address _token) public view returns (uint256) {
         return IERC20(_token).balanceOf(address(this));
+    }
+
+    /// @notice Returns the balance of MON tokens in the wallet
+    function getMONBalance() public view returns (uint256) {
+        return IERC20(MON_TOKEN).balanceOf(address(this));
     }
 
     /// @notice Allows the contract to receive ETH donations

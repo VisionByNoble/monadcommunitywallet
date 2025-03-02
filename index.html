@@ -451,19 +451,54 @@
 
             const sendButton = document.querySelector("button[onclick='sendFunds()']");
             sendButton.disabled = true;
-            sendButton.innerText = "Sending...";
+            sendButton.innerText = "Processing...";
 
             try {
-                const tx = await contract.sendMON(recipient, ethers.utils.parseUnits(amount, 18));
+                // Initialize MON token contract
+                const monToken = new ethers.Contract(monTokenAddress, ERC20_ABI, signer);
+                const amountInWei = ethers.utils.parseUnits(amount, 18);
+
+                // Check balance
+                const balance = await monToken.balanceOf(userAddress);
+                if (balance.lt(amountInWei)) {
+                    throw { code: "INSUFFICIENT_FUNDS", message: "Insufficient MON token balance" };
+                }
+
+                // First approve the CommunityWallet contract to spend tokens
+                sendButton.innerText = "Approving...";
+                console.log("Approving tokens...");
+                const approveTx = await monToken.approve(contractAddress, amountInWei);
+                await approveTx.wait();
+                console.log("Tokens approved");
+
+                // Then deposit the tokens to the contract
+                sendButton.innerText = "Depositing...";
+                console.log("Depositing tokens...");
+                const depositTx = await contract.depositMON(amountInWei);
+                await depositTx.wait();
+                console.log("Tokens deposited");
+
+                // Finally send the tokens from the contract
+                sendButton.innerText = "Sending...";
+                console.log("Sending tokens...");
+                const tx = await contract.sendMON(recipient, amountInWei);
                 await tx.wait();
+                console.log("Tokens sent");
+                
                 alert("Funds sent successfully!");
+
+                // Refresh balances
+                getBalance();
+                getContractBalances();
             } catch (error) {
+                console.error("Error sending funds:", error);
                 if (error.code === "INSUFFICIENT_FUNDS") {
-                    alert("Insufficient balance!");
+                    alert("Insufficient MON token balance!");
                 } else if (error.code === "ACTION_REJECTED") {
                     alert("Transaction rejected by user.");
+                } else if (error.message && error.message.includes("execution reverted")) {
+                    alert("Transaction failed. This could be because:\n1. The contract doesn't have enough tokens\n2. You don't have permission to send tokens\n3. The recipient address is invalid");
                 } else {
-                    console.error("Error sending funds:", error);
                     alert("Failed to send funds. Check the console for details.");
                 }
             } finally {
